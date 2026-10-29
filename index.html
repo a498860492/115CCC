@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>會議出席意願調查與投票</title>
+  <style>
+    :root {
+      --primary: #1976d2;
+      --primary-hover: #1565c0;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --badge-bg: #eff6ff;
+      --badge-text: #1d4ed8;
+      --success: #16a34a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px 16px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* 頁籤切換 */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: -2px;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .meeting-info {
+      background: #f1f5f9;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #334155;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label.field-label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+    }
+
+    /* 時段選單 */
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .slot-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .slot-item:hover {
+      border-color: var(--primary);
+      background: #f8fafc;
+    }
+
+    .slot-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-right: 12px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .slot-text {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .submit-btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .submit-btn:disabled {
+      background-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    /* 狀態提示 */
+    .status-msg {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+    .status-msg.success {
+      display: block;
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .status-msg.error {
+      display: block;
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    /* 投票統計展示 */
+    .results-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .refresh-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .result-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      background: #fafafa;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .result-slot-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .result-count-badge {
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 13px;
+    }
+
+    .result-names {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    .no-data {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>會議出席意願調查與投票</h1>
+      <p class="subtitle">填寫姓名並複選方便出席的時段，送出後資料將即時同步至試算表</p>
+    </header>
+
+    <!-- 頁籤切換 -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchMeeting('CCC 臨床能力委員會')">CCC 臨床能力委員會</button>
+      <button class="tab-btn" onclick="switchMeeting('進階展延審核會議')">進階展延審核會議</button>
+    </div>
+
+    <!-- 投票表單 -->
+    <div class="card">
+      <div id="meeting-info" class="meeting-info">會議時間：13:00–14:30 ｜ 線上會議</div>
+
+      <div class="form-group">
+        <label class="field-label" for="member-name">委員姓名 <span style="color: #ef4444;">*</span></label>
+        <input type="text" id="member-name" placeholder="請輸入姓名（重複送出將直接更新您的紀錄）">
+      </div>
+
+      <div class="form-group">
+        <label class="field-label">可出席時段（可複選）</label>
+        <div id="slots-container" class="slots-grid"></div>
+      </div>
+
+      <button id="submit-btn" class="submit-btn" onclick="submitVote()">送出投票資料</button>
+      <div id="status-msg" class="status-msg"></div>
+    </div>
+
+    <!-- 即時結果統計 -->
+    <div class="card">
+      <div class="results-title">
+        <span>即時投票狀況與名單統計</span>
+        <span class="refresh-hint">每 15 秒自動同步試算表</span>
+      </div>
+      <div id="results-container">連線讀取試算表資料中...</div>
+    </div>
+  </div>
+
+  <script>
+    // 您的 Apps Script 網頁應用程式網址
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwXI65hzyLZD65s0_LxegVcHymYTvVtrs5BYg-_vaUyQBL8T9zz-dRBG0G3sRVjqSng/exec';
+
+    // 兩場會議配置與欄位時段（已取消 12/25 早上與下午）
+    const MEETINGS = {
+      'CCC 臨床能力委員會': {
+        info: '會議時間：13:00–14:30 ｜ 線上會議',
+        slots: ['11/16（一）', '11/27（五）', '11/30（一）']
+      },
+      '進階展延審核會議': {
+        info: '會議地點：白宮 VIP 會議室',
+        slots: [
+          '12/21（一）上午', '12/21（一）下午',
+          '12/22（二）上午', '12/22（二）下午',
+          '12/24（四）上午', '12/24（四）下午'
+        ]
+      }
+    };
+
+    let currentMeeting = 'CCC 臨床能力委員會';
+    let pollData = {};
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderSlots();
+      fetchPollStats();
+      setInterval(fetchPollStats, 15000);
+    });
+
+    // 切換會議分頁
+    function switchMeeting(name) {
+      currentMeeting = name;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.trim() === name);
+      });
+      document.getElementById('meeting-info').textContent = MEETINGS[name].info;
+      document.getElementById('status-msg').className = 'status-msg';
+      document.getElementById('status-msg').style.display = 'none';
+
+      renderSlots();
+      renderStats();
+    }
+
+    // 渲染時段 Checkbox
+    function renderSlots() {
+      const container = document.getElementById('slots-container');
+      container.innerHTML = '';
+      const slots = MEETINGS[currentMeeting].slots;
+
+      slots.forEach((slot, index) => {
+        const id = `slot-${index}`;
+        const item = document.createElement('label');
+        item.className = 'slot-item';
+        item.htmlFor = id;
+        item.innerHTML = `
+          <input type="checkbox" id="${id}" value="${slot}">
+          <span class="slot-text">${slot}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 向 Apps Script 請求最新試算表資料
+    async function fetchPollStats() {
+      try {
+        const res = await fetch(SCRIPT_URL);
+        const json = await res.json();
+        if (json.status === 'success') {
+          pollData = json.data;
+          renderStats();
+        }
+      } catch (err) {
+        console.error('取得統計失敗:', err);
+      }
+    }
+
+    // 渲染統計結果（顯示票數與出席委員名單）
+    function renderStats() {
+      const container = document.getElementById('results-container');
+      const stats = pollData[currentMeeting];
+
+      if (!stats) {
+        container.innerHTML = '<p class="no-data">尚無投票資料</p>';
+        return;
+      }
+
+      const slots = MEETINGS[currentMeeting].slots;
+      let html = '';
+
+      slots.forEach(slot => {
+        const item = stats[slot] || { count: 0, names: [] };
+        const namesText = item.names && item.names.length > 0 
+          ? item.names.join('、') 
+          : '<span class="no-data">目前無人選擇</span>';
+
+        html += `
+          <div class="result-card">
+            <div class="result-header">
+              <span class="result-slot-name">${slot}</span>
+              <span class="result-count-badge">${item.count} 票</span>
+            </div>
+            <div class="result-names">出席委員：${namesText}</div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // 送出投票資料
+    async function submitVote() {
+      const nameInput = document.getElementById('member-name');
+      const name = nameInput.value.trim();
+      const statusMsg = document.getElementById('status-msg');
+      const submitBtn = document.getElementById('submit-btn');
+
+      if (!name) {
+        showStatus('請填寫委員姓名', 'error');
+        nameInput.focus();
+        return;
+      }
+
+      const selections = {};
+      const slots = MEETINGS[currentMeeting].slots;
+      slots.forEach((slot, idx) => {
+        const cb = document.getElementById(`slot-${idx}`);
+        selections[slot] = cb ? cb.checked : false;
+      });
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '資料送出中...';
+      showStatus('', '');
+
+      const payload = {
+        meeting: currentMeeting,
+        name: name,
+        selections: selections
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+
+        if (result.status === 'success') {
+          showStatus(`✅ ${result.message || '投票已成功記錄！'}`, 'success');
+          fetchPollStats();
+        } else {
+          showStatus(`送出失敗：${result.message || '請稍候重試'}`, 'error');
+        }
+      } catch (err) {
+        showStatus('連線逾時或錯誤，請確認網路並重試', 'error');
+        console.error('送出失敗:', err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '送出投票資料';
+      }
+    }
+
+    function showStatus(text, type) {
+      const msg = document.getElementById('status-msg');
+      if (!text) {
+        msg.style.display = 'none';
+        return;
+      }
+      msg.className = `status-msg ${type}`;
+      msg.textContent = text;
+      msg.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
